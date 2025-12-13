@@ -1,7 +1,40 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Base.Theme.Marketplaceapp" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your dark theme here. -->
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+    <style name="Base.Theme.Marketplace" parent="Theme.Material3.DayNight">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+
+        <!-- Colores primarios -->
+        <item name="colorPrimary">@color/christmas_red_dark</item>
+        <item name="colorOnPrimary">@color/white</item>
+
+        <!-- Colores secundarios -->
+        <item name="colorSecondary">@color/christmas_green_dark</item>
+        <item name="colorOnSecondary">@color/white</item>
+
+        <!-- Color de la barra de estado -->
+        <item name="android:statusBarColor">@color/christmas_red_dark</item>
+
+        <!-- Estilo para el menú desplegable -->
+        <item name="actionOverflowMenuStyle">@style/PopupMenu.Marketplace</item>
+    </style>
+
+    <style name="Theme.Marketplace" parent="Base.Theme.Marketplace" />
+
+    <!-- Estilo para el texto del título de la Toolbar -->
+    <style name="Toolbar.TitleText" parent="TextAppearance.Widget.AppCompat.Toolbar.Title">
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <!-- Estilo para el menú desplegable con fondo blanco -->
+    <style name="PopupMenu.Marketplace" parent="@style/Widget.AppCompat.PopupMenu.Overflow">
+        <item name="android:popupBackground">@drawable/popup_background</item>
+        <item name="itemTextAppearance">@style/PopupMenu.Marketplace.Text</item>
+    </style>
+
+    <!-- Estilo para el texto del menú desplegable -->
+    <style name="PopupMenu.Marketplace.Text">
+        <item name="android:textColor">@color/black</item>
+        <item name="android:textSize">16sp</item>
     </style>
 </resources>

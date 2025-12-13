@@ -2,4 +2,8 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    
+    <!-- Colores Navideños Oscuros -->
+    <color name="christmas_red_dark">#B71C1C</color>
+    <color name="christmas_green_dark">#1B5E20</color>
 </resources>
