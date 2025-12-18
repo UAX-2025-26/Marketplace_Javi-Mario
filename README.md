@@ -37,20 +37,41 @@
 
 ## 🌟 Descripción General
 
-**Marketplace App** es una aplicación Android completa de comercio electrónico desarrollada como proyecto educativo para la asignatura **"Programación Dirigida por Eventos"**. La aplicación implementa un marketplace funcional donde los usuarios pueden:
+**Marketplace App** es una aplicación Android completa de comercio electrónico desarrollada como proyecto educativo para la asignatura **"Programación Dirigida por Eventos"**. 
 
-- 🔐 Registrarse y autenticarse de forma segura
-- 📱 Explorar un catálogo de productos navideños
-- 🛍️ Agregar productos a un carrito de compras
-- 💳 Realizar pedidos y consultar su historial
-- 👤 Gestionar su sesión de usuario
+### ¿Qué es este proyecto?
 
-El proyecto demuestra la aplicación práctica de conceptos fundamentales del desarrollo Android moderno, incluyendo:
-- **Arquitectura MVVM** (Model-View-ViewModel)
-- **Patrón Single-Activity** con múltiples Fragments
-- **Programación Dirigida por Eventos**
-- **Persistencia de datos** local y remota
-- **Navegación declarativa** mediante Navigation Component
+Esta aplicación es un **marketplace navideño funcional** que permite a los usuarios realizar todas las operaciones típicas de una tienda online:
+
+- 🔐 **Registrarse y autenticarse** de forma segura usando Firebase Authentication
+- 📱 **Explorar un catálogo** de productos navideños con información detallada
+- 🛍️ **Agregar productos al carrito** con cantidades personalizables
+- 💳 **Realizar pedidos** que se guardan en un historial persistente
+- 👤 **Gestionar su sesión** con login, logout y persistencia de datos
+
+### ¿Por qué es importante este proyecto?
+
+Este proyecto NO es solo una app funcional, es una **demostración práctica de arquitectura de software profesional**:
+
+1. **Aplicación Real de Conceptos Teóricos**: Los patrones de diseño y principios de programación que se estudian en clase están implementados aquí de forma práctica.
+
+2. **Código Escalable y Mantenible**: La arquitectura MVVM permite que la app crezca sin volverse un "código espagueti". Puedes agregar nuevas funcionalidades sin romper las existentes.
+
+3. **Preparación Profesional**: Las técnicas usadas aquí (MVVM, Repository Pattern, Dependency Injection manual) son las mismas que se usan en empresas como Google, Amazon o startups tecnológicas.
+
+4. **Fundamentos Transferibles**: Aunque está en Android, los conceptos (separación de capas, programación reactiva, persistencia) aplican a iOS, Web, Backend.
+
+### Conceptos Fundamentales Demostrados
+
+- **Arquitectura MVVM** (Model-View-ViewModel): Separación de responsabilidades en 3 capas
+- **Patrón Single-Activity**: Una sola Activity que hospeda múltiples Fragments, siguiendo las mejores prácticas modernas de Android
+- **Programación Dirigida por Eventos**: La app reacciona a acciones del usuario (clics, entradas de texto) en lugar de ejecutar código secuencial
+- **Persistencia Híbrida**: 
+  - Local (Room Database) para datos del usuario (carrito, pedidos)
+  - Remota (Firebase) para autenticación centralizada
+- **Navegación declarativa**: Flujos de navegación definidos visualmente en XML, no en código disperso
+- **Programación Asíncrona**: Operaciones pesadas en hilos background para mantener la UI fluida
+- **Observables Lifecycle-Aware**: LiveData que respeta el ciclo de vida de Android, evitando memory leaks
 
 ---
 
@@ -93,7 +114,43 @@ El proyecto demuestra la aplicación práctica de conceptos fundamentales del de
 
 ### Patrón Arquitectónico: MVVM
 
-La aplicación sigue el patrón **MVVM (Model-View-ViewModel)**, que proporciona una clara separación de responsabilidades:
+La aplicación sigue el patrón **MVVM (Model-View-ViewModel)**, que proporciona una clara separación de responsabilidades.
+
+#### ¿Por qué MVVM?
+
+MVVM es el patrón recomendado por Google para aplicaciones Android modernas porque:
+
+1. **Separación de Responsabilidades**: Cada capa tiene un propósito específico y bien definido, lo que hace el código más organizado y fácil de mantener.
+
+2. **Testabilidad**: La lógica de negocio en ViewModels y Repositories puede probarse sin necesidad de componentes Android (Activities/Fragments), permitiendo tests unitarios más rápidos y confiables.
+
+3. **Supervivencia a Cambios de Configuración**: Los ViewModels sobreviven a rotaciones de pantalla y otros cambios de configuración, evitando pérdida de datos y mejorando la experiencia del usuario.
+
+4. **Código Reutilizable**: Los Repositories y ViewModels pueden compartirse entre diferentes vistas, reduciendo duplicación de código.
+
+5. **Mantenibilidad**: Cuando necesitas modificar la interfaz, solo cambias la Vista. Si cambias la fuente de datos (de local a remota), solo modificas el Repository, sin tocar las demás capas.
+
+#### Flujo de Datos en MVVM
+
+```
+Usuario interactúa con UI (View)
+         ↓
+View notifica evento al ViewModel
+         ↓
+ViewModel procesa la lógica de negocio
+         ↓
+ViewModel solicita datos al Repository
+         ↓
+Repository obtiene datos (Room/Firebase)
+         ↓
+Repository devuelve datos al ViewModel
+         ↓
+ViewModel expone datos como LiveData
+         ↓
+View observa LiveData y actualiza UI
+```
+
+#### Diagrama de Capas
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -129,12 +186,18 @@ La aplicación sigue el patrón **MVVM (Model-View-ViewModel)**, que proporciona
 └─────────────────────────────────────────────────────────┘
 ```
 
-#### **View (Vista)**
+#### **View (Vista)** - La Interfaz con el Usuario
+
 - **Responsabilidad**: Mostrar datos y capturar eventos del usuario
 - **Componentes**: Fragments, Activity, Adapters
 - **Característica**: Sin lógica de negocio, solo renderizado y eventos
 
-#### **ViewModel**
+**¿Qué hace?** La Vista es lo que el usuario ve y con lo que interactúa. En esta app, cada pantalla (login, catálogo, carrito) es un Fragment. Cuando el usuario hace clic en un botón o escribe en un campo, la Vista captura ese evento y lo comunica al ViewModel.
+
+**Ejemplo práctico**: Cuando haces clic en "Agregar al Carrito", el Fragment (`ProductDetailFragment`) captura ese evento y llama a `cartViewModel.addToCart(item, quantity)`. La Vista NO calcula el total ni guarda en la base de datos, solo comunica la acción.
+
+#### **ViewModel** - El Cerebro de la Pantalla
+
 - **Responsabilidad**: Gestionar estado de la UI y lógica de presentación
 - **Características**:
   - Sobrevive a cambios de configuración (rotaciones)
@@ -142,42 +205,101 @@ La aplicación sigue el patrón **MVVM (Model-View-ViewModel)**, que proporciona
   - Procesa eventos del usuario
   - Se comunica con Repositories
 
-#### **Repository**
+**¿Qué hace?** El ViewModel es el intermediario entre la Vista y los datos. Contiene toda la lógica de presentación: qué mostrar, cuándo mostrar, cómo procesar las acciones del usuario. Cuando rotas el teléfono, el Fragment se destruye y recrea, pero el ViewModel permanece, manteniendo el estado.
+
+**Ejemplo práctico**: El `CartViewModel` mantiene la lista de items del carrito como `LiveData<List<CartItem>>`. Cuando agregas un producto, el ViewModel le dice al Repository que lo guarde, y automáticamente todos los Fragments que observan ese LiveData reciben la actualización.
+
+**¿Por qué LiveData?** LiveData es "consciente del ciclo de vida" (lifecycle-aware), lo que significa que solo notifica cambios cuando el Fragment está visible. Esto previene crashes y memory leaks.
+
+#### **Repository** - El Gestor de Datos
+
 - **Responsabilidad**: Única fuente de verdad para los datos
 - **Funciones**:
   - Abstrae el origen de datos
   - Coordina entre fuentes locales y remotas
   - Ejecuta operaciones de forma asíncrona
 
-#### **Data Sources**
+**¿Qué hace?** El Repository decide DE DÓNDE vienen los datos. ¿Los tengo guardados localmente? ¿Necesito descargarlos de internet? ¿Están desactualizados? El ViewModel no necesita saber estos detalles, solo pide "dame los productos del carrito" y el Repository se encarga.
+
+**Ejemplo práctico**: `CartRepository` gestiona los datos del carrito. Cuando pides todos los items, el Repository consulta la base de datos Room. Cuando agregas un item, verifica si ya existe (para actualizar la cantidad) o si es nuevo (para insertarlo). Todo esto ocurre en un hilo separado para no bloquear la UI.
+
+**Principio Single Source of Truth**: Siempre hay UNA sola fuente autoritativa de datos. En nuestra app, el carrito "vive" en Room, no en múltiples variables dispersas. Esto evita inconsistencias.
+
+#### **Data Sources** - Las Fuentes de Información
+
 - **Room Database**: Persistencia local (SQLite)
 - **Firebase Authentication**: Autenticación remota
 - **Models**: Definición de estructuras de datos
 
+**¿Qué hace cada fuente?**
+
+**Room Database**: Es una base de datos SQLite local en el dispositivo. Usamos Room (no SQLite directamente) porque:
+- Convierte automáticamente entre objetos Java y tablas SQL
+- Verifica las consultas en tiempo de compilación (detecta errores antes de ejecutar)
+- Se integra perfectamente con LiveData
+
+**Firebase Authentication**: Servicio en la nube de Google que gestiona usuarios. ¿Por qué usarlo?
+- Seguridad robusta (hashing de contraseñas, protección contra ataques)
+- No necesitamos crear nuestro propio sistema de autenticación (complejo y arriesgado)
+- Escalable: funciona igual con 10 o 10 millones de usuarios
+
+**Models (Entidades)**: Son clases Java que representan conceptos del mundo real: Producto, Item del Carrito, Pedido. Room las convierte en tablas, Firebase las serializa a JSON.
+
 ### 🔧 Stack Tecnológico
 
 #### **Lenguaje y Framework**
-- **Java 11**: Lenguaje de programación principal
-- **Android SDK**: API Level 24+ (Android 7.0 Nougat)
-- **Target SDK**: API Level 36
 
-#### **Jetpack Components**
-| Componente | Versión | Propósito |
-|-----------|---------|-----------|
-| **ViewBinding** | Incluido | Acceso type-safe a las vistas |
-| **Navigation Component** | 2.7.6 | Gestión de navegación entre pantallas |
-| **LiveData** | Incluido | Observables lifecycle-aware |
-| **Room** | 2.6.1 | Persistencia de datos local (SQLite) |
-| **ConstraintLayout** | Latest | Layouts flexibles y eficientes |
+| Tecnología | Versión | ¿Por qué se eligió? |
+|-----------|---------|---------------------|
+| **Java 11** | JDK 11+ | Lenguaje maduro y estable con excelente soporte en Android. Aunque Kotlin es el lenguaje oficial recomendado por Google, Java sigue siendo ampliamente usado y es fundamental para entender Android. |
+| **Android SDK** | API 24+ | Android 7.0 Nougat (2016) cubre el 95%+ de dispositivos en uso, balanceando compatibilidad con acceso a APIs modernas. |
+| **Target SDK** | API 36 | Objetivo a las últimas APIs de Android para aprovechar mejoras de seguridad y rendimiento más recientes. |
 
-#### **Firebase Services**
-- **Firebase BoM**: 32.7.0
-- **Firebase Authentication**: Autenticación de usuarios
+**Nota sobre Java vs Kotlin**: Este proyecto usa Java por razones pedagógicas (amplia documentación, sintaxis familiar para estudiantes de programación general). En producción, muchos proyectos nuevos prefieren Kotlin por su sintaxis concisa y null-safety.
 
-#### **Build System**
-- **Gradle**: 8.x con Kotlin DSL
-- **Android Gradle Plugin**: 8.x
-- **Minimum SDK**: 24
+#### **Jetpack Components** - La Suite Moderna de Android
+
+Android Jetpack es una colección de bibliotecas que implementan mejores prácticas, reducen código boilerplate y funcionan consistentemente en diferentes versiones de Android.
+
+| Componente | Versión | ¿Qué hace? | ¿Por qué NO usar la alternativa antigua? |
+|-----------|---------|------------|------------------------------------------|
+| **ViewBinding** | Incluido | Genera automáticamente clases que referencian vistas del XML. `binding.textView` en vez de `findViewById(R.id.textView)` | **vs findViewById()**: ViewBinding es type-safe (errores en compilación, no runtime) y null-safe (evita NullPointerExceptions). |
+| **Navigation Component** | 2.7.6 | Gestiona navegación entre pantallas con un gráfico visual. Maneja backstack, argumentos tipados, deep links. | **vs Manual FragmentTransactions**: Reduce código en 70%, elimina errores comunes (backstack mal manejado), permite visualizar flujos. |
+| **LiveData** | Incluido | Observable que respeta el ciclo de vida. Solo notifica cuando el Fragment/Activity está activo. | **vs EventBus/RxJava**: Más simple, integrado nativamente, previene memory leaks automáticamente. |
+| **Room** | 2.6.1 | ORM (Object-Relational Mapping) sobre SQLite. Convierte objetos Java ↔ tablas SQL. | **vs SQLite directo**: Room verifica SQL en compilación, reduce bugs, 10x menos código boilerplate. |
+| **ConstraintLayout** | Latest | Layout flexible que reemplaza jerarquías complejas de LinearLayout/RelativeLayout. | **vs Layouts anidados**: Mejor rendimiento (jerarquía plana), más expresivo, editor visual potente. |
+
+#### **Firebase Services** - Backend as a Service
+
+| Servicio | Versión | ¿Qué proporciona? |
+|---------|---------|-------------------|
+| **Firebase BoM** | 32.7.0 | Bill of Materials: Gestiona versiones compatibles de todas las bibliotecas Firebase automáticamente. |
+| **Firebase Authentication** | (de BoM) | Sistema completo de autenticación: registro, login, recuperación de contraseña, tokens seguros. |
+
+**¿Por qué Firebase y no un backend propio?**
+1. **Desarrollo rápido**: Autenticación funcional en minutos, no semanas
+2. **Seguridad profesional**: Google mantiene la seguridad actualizada
+3. **Escalabilidad automática**: De 10 a 10 millones de usuarios sin cambios
+4. **Gratuito para aprendizaje**: Tier gratuito generoso
+5. **Enfoque en aprendizaje**: Permite concentrarse en arquitectura Android, no en backend
+
+**Limitación importante**: Firebase es cerrado (vendor lock-in). En producción, proyectos grandes a veces prefieren backends propios para control total.
+
+#### **Build System** - Cómo se Ensambla la App
+
+| Herramienta | Versión | Función |
+|-------------|---------|---------|
+| **Gradle** | 8.x | Sistema de construcción que compila código, gestiona dependencias, ejecuta tests. |
+| **Android Gradle Plugin** | 8.x | Plugin que extiende Gradle con capacidades Android (APK building, ProGuard, etc.). |
+| **Minimum SDK** | 24 | Android 7.0+: versión mínima compatible |
+| **Compile SDK** | 36 | Versión contra la que compilamos (acceso a últimas APIs) |
+| **Target SDK** | 36 | Versión para la que optimizamos (Google Play lo usa para permisos y comportamiento) |
+
+**¿Por qué Gradle y no otro sistema?**
+- Es el estándar oficial de Android (Maven quedó obsoleto)
+- Altamente configurable (builds diferentes para debug/release)
+- Gestión declarativa de dependencias (versiones, repositorios)
+- Incremental builds: solo recompila lo que cambió
 - **Compile SDK**: 36
 
 #### **Testing**
@@ -562,6 +684,22 @@ Al hacer clic en un producto:
 - Confirmación visual al agregar
 - Navegación hacia atrás
 
+**¿Qué sucede internamente cuando haces clic en "Agregar al Carrito"?**
+
+1. **Fragment captura el evento**: El `setOnClickListener` del botón se activa
+2. **Fragment crea un CartItem**: Con el productId, nombre, precio y cantidad seleccionada
+3. **Fragment llama al ViewModel**: `cartViewModel.addToCart(cartItem, quantity)`
+4. **ViewModel delega al Repository**: `cartRepository.insertOrUpdate(cartItem, quantity)`
+5. **Repository ejecuta en background thread**: Usa `ExecutorService` para no bloquear UI
+6. **Repository consulta si el item existe**: `cartDao.getCartItemById(productId)`
+   - Si existe: Actualiza quantity (suma la nueva cantidad)
+   - Si no existe: Inserta nuevo CartItem
+7. **Room notifica cambio**: Como `getAllCartItems()` retorna LiveData
+8. **Todos los observadores reciben actualización**: CartFragment ve el cambio automáticamente
+9. **UI se actualiza**: Sin necesidad de "refrescar" manualmente
+
+Este flujo ejemplifica perfectamente **programación reactiva** y **separación de responsabilidades**.
+
 #### 5. **Carrito de Compras** (CartFragment)
 
 Visualización de productos seleccionados:
@@ -894,27 +1032,65 @@ navController.navigateUp();
 
 ## 💾 Base de Datos
 
+### ¿Por qué necesitamos una base de datos local?
+
+En aplicaciones móviles, la base de datos local es **fundamental** por varias razones:
+
+1. **Funcionamiento Offline**: El usuario puede usar la app sin conexión a internet. El carrito no desaparece si se cae la red.
+
+2. **Rendimiento**: Leer de disco es ~100ms, leer de internet es ~500-2000ms. La diferencia se nota instantáneamente.
+
+3. **Persistencia**: Los datos sobreviven al cierre de la app. No pierdes tu carrito al salir.
+
+4. **Reducción de Costes**: Menos peticiones al servidor = menor factura de servicios cloud.
+
+5. **Mejor UX**: Interacciones instantáneas, sin "spinners" de carga constantes.
+
 ### Esquema de Room Database
 
-La aplicación utiliza **Room** para persistencia local con dos tablas principales:
+La aplicación utiliza **Room** para persistencia local con dos tablas principales.
 
-#### **Tabla: cart_items**
+#### ¿Por qué Room y no SQLite directamente?
+
+Room es una capa de abstracción sobre SQLite que proporciona:
+
+| Característica | SQLite Directo | Room |
+|---------------|----------------|------|
+| **Verificación de SQL** | Runtime (crashes si SQL incorrecto) | Compile-time (error antes de ejecutar) |
+| **Conversión Objeto↔Tabla** | Manual (100+ líneas de código boilerplate) | Automática (anotaciones @Entity) |
+| **Integración LiveData** | Compleja (manejar cursors manualmente) | Nativa (retornas `LiveData<List<T>>`) |
+| **Migraciones** | Propensas a errores | Guiadas con helpers |
+| **Threading** | Debes manejar manualmente | Advertencias automáticas si consultas en UI thread |
+
+**Ejemplo real**: Sin Room, insertar un CartItem requiere ~30 líneas. Con Room, solo una anotación `@Insert` en el DAO.
+
+#### **Tabla: cart_items** - El Carrito de Compras
+
+**Propósito**: Almacenar los productos que el usuario ha agregado al carrito, con sus cantidades.
+
+**Esquema SQL generado por Room:**
 ```sql
 CREATE TABLE cart_items (
-    productId TEXT PRIMARY KEY NOT NULL,
-    name TEXT NOT NULL,
-    price REAL NOT NULL,
-    quantity INTEGER NOT NULL
+    productId TEXT PRIMARY KEY NOT NULL,  -- ID único del producto
+    name TEXT NOT NULL,                    -- Nombre para mostrar
+    price REAL NOT NULL,                   -- Precio unitario
+    quantity INTEGER NOT NULL              -- Cantidad seleccionada
 );
 ```
 
-**Entity:**
+**¿Por qué estos campos?**
+- `productId`: Clave primaria. Garantiza que cada producto aparece solo una vez. Si agregas el mismo producto dos veces, se actualiza la cantidad, no se duplica.
+- `name` y `price`: Datos desnormalizados (copiados del modelo Product). ¿Por qué? Si el precio del producto cambia en el catálogo, el carrito mantiene el precio original (como un "congelamiento" del precio en el momento de agregarlo).
+- `quantity`: Contador. Más eficiente que tener N filas del mismo producto.
+
+**Entity en Java:**
 ```java
-@Entity(tableName = "cart_items")
+@Entity(tableName = "cart_items")  // Room crea la tabla con este nombre
 public class CartItem {
-    @PrimaryKey
-    @NonNull
+    @PrimaryKey              // Marca la clave primaria
+    @NonNull                 // No puede ser null (Room lo verifica)
     private String productId;
+    
     private String name;
     private double price;
     private int quantity;
@@ -922,46 +1098,64 @@ public class CartItem {
 }
 ```
 
-**DAO:**
+**DAO (Data Access Object)** - La Interfaz con la Base de Datos:
 ```java
-@Dao
+@Dao  // Room genera la implementación automáticamente
 public interface CartDao {
+    // Retorna LiveData: se actualiza automáticamente cuando la DB cambia
     @Query("SELECT * FROM cart_items")
     LiveData<List<CartItem>> getAllCartItems();
     
+    // Búsqueda por ID (retorna objeto simple, no LiveData, para operaciones síncronas)
     @Query("SELECT * FROM cart_items WHERE productId = :productId")
     CartItem getCartItemById(String productId);
     
+    // Si el item existe (mismo productId), REEMPLAZA. Si no, INSERTA.
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insert(CartItem cartItem);
     
+    // Actualiza un item existente (basado en la primary key)
     @Update
     void update(CartItem cartItem);
     
+    // Vacía todo el carrito (al finalizar compra)
     @Query("DELETE FROM cart_items")
     void clearCart();
 }
 ```
 
-#### **Tabla: orders**
+**Nota sobre LiveData en el DAO**: `getAllCartItems()` retorna `LiveData<List<CartItem>>`. Esto significa que Room observa la tabla y notifica automáticamente cuando hay cambios (inserts, updates, deletes). El Fragment no necesita "refrescar" manualmente.
+
+#### **Tabla: orders** - Historial de Pedidos
+
+**Propósito**: Registrar cada pedido completado para que el usuario pueda consultar su historial.
+
+**Esquema SQL:**
 ```sql
 CREATE TABLE orders (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    date INTEGER NOT NULL,
-    itemsSummary TEXT NOT NULL,
-    totalPrice REAL NOT NULL
+    id INTEGER PRIMARY KEY AUTOINCREMENT,  -- ID único autogenerado
+    date INTEGER NOT NULL,                  -- Timestamp UNIX (milisegundos desde 1970)
+    itemsSummary TEXT NOT NULL,            -- Resumen legible de items
+    totalPrice REAL NOT NULL               -- Precio total del pedido
 );
 ```
 
-**Entity:**
+**Decisiones de diseño:**
+- `id` con `AUTOINCREMENT`: Room genera IDs únicos automáticamente (1, 2, 3...). Útil para referencias futuras o actualizaciones.
+- `date` como `INTEGER` (timestamp): Más eficiente que almacenar strings de fecha. Se puede convertir fácilmente a `Date`, `LocalDateTime`, o formatear como se necesite.
+- `itemsSummary` como `TEXT`: Resumen desnormalizado. ¿Por qué no una tabla separada `order_items`? Para un historial de solo-lectura, es más simple y rápido consultar. En sistemas complejos sí usarías una relación.
+- `totalPrice`: Pre-calculado. Evita recalcular sumando items cada vez que se muestra el historial.
+
+**Entity en Java:**
 ```java
 @Entity(tableName = "orders")
 public class Order {
-    @PrimaryKey(autoGenerate = true)
+    @PrimaryKey(autoGenerate = true)  // Room incrementa automáticamente
     private int id;
-    private long date;           // Timestamp en milisegundos
-    private String itemsSummary; // "Producto1 (2), Producto2 (1)"
-    private double totalPrice;
+    
+    private long date;                 // Timestamp: System.currentTimeMillis()
+    private String itemsSummary;       // "Árbol de Navidad (1), Luces LED (2)"
+    private double totalPrice;         // 89.97
     // ... constructors, getters, setters
 }
 ```
@@ -970,15 +1164,21 @@ public class Order {
 ```java
 @Dao
 public interface OrderDao {
+    // Ordena por fecha descendente: pedidos más recientes primero
     @Query("SELECT * FROM orders ORDER BY date DESC")
     LiveData<List<Order>> getAllOrders();
     
     @Insert
     void insert(Order order);
+    
+    // Nota: No hay @Delete ni @Update porque los pedidos son inmutables
+    // (no se editan ni eliminan una vez creados en esta versión de la app)
 }
 ```
 
-### Configuración de Database
+**¿Por qué no hay DELETE/UPDATE?** En e-commerce real, los pedidos son **inmutables** una vez creados (por auditoría, legal, contabilidad). Si el usuario quiere "cancelar", se crea un nuevo registro de cancelación, no se borra el pedido original.
+
+### Configuración de Database - El Corazón de Room
 
 ```java
 @Database(entities = {CartItem.class, Order.class}, version = 2, exportSchema = false)
@@ -1010,6 +1210,80 @@ public abstract class AppDatabase extends RoomDatabase {
     public static final ExecutorService databaseWriteExecutor =
         Executors.newFixedThreadPool(4);
 }
+```
+
+#### Explicación Detallada de la Configuración
+
+**1. Anotación @Database:**
+```java
+@Database(
+    entities = {CartItem.class, Order.class},  // Tablas a crear
+    version = 2,                                // Versión del esquema
+    exportSchema = false                        // No exportar esquema JSON
+)
+```
+- `entities`: Lista de todas las clases `@Entity`. Room crea una tabla por cada una.
+- `version`: Número de versión del esquema. Al cambiar el esquema (añadir columna, tabla, etc.), incrementas esto para triggear migración.
+- `exportSchema = false`: Por defecto, Room exporta el esquema a JSON para tracking de cambios. Para desarrollo simple, lo desactivamos.
+
+**2. Patrón Singleton con Double-Check Locking:**
+
+**¿Por qué Singleton?** Crear una instancia de base de datos es **costoso** (abre archivos, carga esquema, etc.). Queremos UNA sola instancia compartida por toda la app.
+
+**¿Por qué Double-Check Locking?**
+```java
+if (INSTANCE == null) {              // Primera verificación (sin lock, rápida)
+    synchronized (AppDatabase.class) { // Solo si es null, adquiere lock
+        if (INSTANCE == null) {        // Segunda verificación (con lock, segura)
+            INSTANCE = Room.databaseBuilder(...).build();
+        }
+    }
+}
+```
+
+- **Primer check**: Evita el costoso `synchronized` si la instancia ya existe (99.9% de las llamadas)
+- **synchronized**: Asegura que solo un hilo cree la instancia (seguridad en multi-threading)
+- **Segundo check**: Previene race condition (dos hilos pasan el primer check simultáneamente)
+- **volatile**: Garantiza visibilidad de INSTANCE entre hilos (previene optimizaciones del compilador que podrían romper el patrón)
+
+**3. fallbackToDestructiveMigration():**
+
+**¿Qué hace?** Si cambias el esquema (version 1 → 2) y no proporcionas una migración manual, Room **borra toda la base de datos** y la recrea.
+
+**¿Cuándo usarlo?**
+- ✅ **Desarrollo/Prototipado**: Cambias esquema frecuentemente, no quieres escribir migraciones complejas
+- ✅ **Apps con datos no críticos**: Perder datos es aceptable (caché, carrito recuperable)
+- ❌ **Producción con datos valiosos**: Nunca uses esto si perder datos afecta al usuario
+
+**Alternativa en producción:**
+```java
+.addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+```
+Donde defines cómo transformar datos de versión antigua a nueva.
+
+**4. ExecutorService - Pool de Hilos para DB:**
+
+```java
+public static final ExecutorService databaseWriteExecutor =
+    Executors.newFixedThreadPool(4);
+```
+
+**¿Por qué un pool de hilos?**
+- Room **prohíbe** operaciones de escritura en el hilo principal (lanzará excepción)
+- Necesitamos hilos background para inserts, updates, deletes
+- Un pool reutiliza hilos (más eficiente que crear/destruir hilos constantemente)
+
+**¿Por qué 4 hilos?**
+- Balance entre paralelismo y recursos
+- 1 hilo: operaciones seriales, lento en múltiples escrituras
+- 100 hilos: desperdicia memoria, context switching overhead
+- 4 hilos: suficiente para esta app (raramente más de 2-3 operaciones DB simultáneas)
+
+**Uso en Repositories:**
+```java
+AppDatabase.databaseWriteExecutor.execute(() -> {
+    cartDao.insert(item);  // Este código corre en hilo background
+});
 ```
 
 ### Ciclo de Vida de los Datos
